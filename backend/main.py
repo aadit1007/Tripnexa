@@ -1,10 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import requests
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 app = FastAPI()
 
-# Allow React to connect
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -15,11 +21,54 @@ app.add_middleware(
 
 class TripRequest(BaseModel):
     destination: str
-    budget: str
     days: str
+    budget: str
+
 
 @app.post("/generate")
 def generate_trip(data: TripRequest):
+
+    prompt = f"""
+    Create a travel plan in JSON.
+
+    Destination: {data.destination}
+    Days: {data.days}
+    Budget: {data.budget}
+
+    Return JSON with this format:
+
+    {{
+    "title": "",
+    "description": "",
+    "history": "",
+    "days": [
+    {{
+        "day": 1,
+        "activities": ["", "", ""]
+    }}
+    ],
+    "image_queries": ["", "", ""]
+    }}
+    """ 
+
+    url = "https://openrouter.ai/api/v1/chat/completions"
+
+    headers = {
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "model": "deepseek/deepseek-chat",
+        "messages": [
+            {"role": "system", "content": "You are a travel planning assistant."},
+            {"role": "user", "content": prompt}
+        ]
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+    result = response.json()
+
     return {
-        "message": f"Trip to {data.destination} for {data.days} days within budget {data.budget} is being planned."
+        "message": result["choices"][0]["message"]["content"]
     }

@@ -133,3 +133,20 @@ input[type="date"] {
 .submit-btn:hover {
   background: #333;
 }
+
+.loading-text {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.itinerary-result {
+  margin-top: 40px;
+  padding: 20px;
+  background: #f7f7f7;
+  border-radius: 10px;
+}
+
+.itinerary-result pre {
+  white-space: pre-wrap;
+  font-family: inherit;
+}
