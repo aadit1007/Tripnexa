@@ -9,7 +9,7 @@ function Hero() {
       <h1>
         Craft Unforgettable <br />
         Itineraries with <br />
-        <span className="highlight">AI Trip Planner</span>
+        <span className="highlight">TripNexa Planner</span>
       </h1>
 
       <p>

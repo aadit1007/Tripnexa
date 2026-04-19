@@ -18,16 +18,11 @@ import "../styles/tripplanner.css";
 
 function TripPlanner() {
 
-  const cityOptions = [
-    { value: "New York", label: "New York" },
-    { value: "London", label: "London" },
-    { value: "Tokyo", label: "Tokyo" },
-    { value: "Paris", label: "Paris" },
-    { value: "Dubai", label: "Dubai" },
-    { value: "Sydney", label: "Sydney" }
-  ];
+
 
   const navigate = useNavigate();
+  const [options, setOptions] = useState([]);
+  const [inputValue, setInputValue] = useState("");
   const [destination, setDestination] = useState(null);
   const [date, setDate] = useState("");
   const [days, setDays] = useState(3);
@@ -45,57 +40,101 @@ function TripPlanner() {
     }
   };
 
+  const fetchCities = async (input) => {
+  if (!input) return;
+
+  try {
+    const res = await fetch(
+      `https://api.geoapify.com/v1/geocode/autocomplete?text=${input}&type=city&limit=5&apiKey=697a5489dbee42b1ab0cd2df6293407f`
+    );
+
+    const data = await res.json();
+
+    const formatted = data.features.map((place) => ({
+      label: place.properties.formatted,
+      value: place.properties.city || place.properties.name
+    }));
+
+    setOptions(formatted);
+
+  } catch (err) {
+    console.error("Autocomplete error:", err);
+  }
+
+  let timeout;
+
+const fetchCities = (input) => {
+  clearTimeout(timeout);
+
+  timeout = setTimeout(async () => {
+    // API call here
+  }, 400);
+};
+
+if (!input || input.length < 2) {
+  setOptions([]);
+  return;
+}
+};
+
+  
+
   const handleSubmit = async () => {
-    if (!destination) {
-      alert("Please select a destination");
-      return;
-    }
+  console.log("SUBMIT CLICKED");
 
-    setLoading(true);
-    setResult("");
+  if (!destination) {
+    alert("Please select a destination");
+    return;
+  }
 
-    try {
-      const response = await fetch("http://127.0.0.1:8000/generate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          destination: destination.value,
-          days: days.toString(),
-          budget: budget
-        })
-      });
+  setLoading(true);
+  setResult("");
 
-      const data = await response.json();
-      
-      // If data.message is JSON, we can navigate to the trip-result page
-    try {
+  try {
+    const response = await fetch("http://127.0.0.1:8000/generate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        destination: destination.value,
+        days: days.toString(),
+        budget: budget
+      })
+    });
 
-    const jsonStart = data.message.indexOf("{");
-    const jsonEnd = data.message.lastIndexOf("}") + 1;
+    const data = await response.json();
+    console.log("RAW RESPONSE:", data);
 
-    const jsonString = data.message.substring(jsonStart, jsonEnd);
+    const tripData = data.message;
 
-    const tripData = JSON.parse(jsonString);
+  // save for refresh (optional but good)
+  localStorage.setItem("tripData", JSON.stringify(tripData));
 
+  // navigate to result page
+  navigate("/trip-result", {
+    state: { tripData }
+  });
+
+    // save for refresh
+    localStorage.setItem("tripData", JSON.stringify(tripData));
+
+    // navigate
     navigate("/trip-result", {
       state: { tripData }
     });
 
-    } catch (e) {
-    console.error("JSON parse failed:", e);
-    setResult(data.message);
-    }  
+  } catch (error) {
+    console.error("ERROR:", error);
+    alert("Failed to generate trip.");
+    setResult("Failed to generate itinerary.");
+  }
 
-    } catch (error) {
-      console.error(error);
-      alert("Failed to generate trip.");
-      setResult("Failed to generate itinerary.");
-    }
+  setLoading(false);
+};
 
-    setLoading(false);
-  };
+    
+
 
   return (
     <>
@@ -113,9 +152,13 @@ function TripPlanner() {
         <div className="planner-section">
           <label>Destination of choice</label>
           <Select
-            options={cityOptions}
-            onChange={setDestination}
-            placeholder="Select or type a city..."
+            options={options}                  // ← use dynamic options (from API)
+            onChange={setDestination}          // ← when user selects
+            onInputChange={(value) => {        // ← when user types
+              setInputValue(value);
+              fetchCities(value);              // ← call API
+            }}
+            placeholder="Type a city..."
           />
         </div>
 
@@ -219,7 +262,13 @@ function TripPlanner() {
           </button>
         </div>
 
-        {loading && <p className="loading-text">Generating your itinerary...</p>}
+        {loading && (
+          <div className="skeleton">
+            <div className="skeleton-title"></div>
+            <div className="skeleton-card"></div>
+            <div className="skeleton-card"></div>
+          </div>
+        )}
 
         {result && (
           <div className="itinerary-result">
