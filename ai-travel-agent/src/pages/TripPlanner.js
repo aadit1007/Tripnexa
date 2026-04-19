@@ -155,7 +155,9 @@ export default function TripPlanner() {
         data = await response.json();
       } catch {
         const hint =
-          response.status === 502 || response.status === 504
+          response.status === 500 ||
+          response.status === 502 ||
+          response.status === 504
             ? " Is the backend running? From repo root: cd backend && npm run dev (port 8000)."
             : "";
         alert(`Could not read server response.${hint}`);

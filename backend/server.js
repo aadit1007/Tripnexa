@@ -208,7 +208,7 @@ app.post("/generate", async (req, res) => {
       const code = err.code ?? orRes.status;
       const msg = err.message ?? "unknown error";
       return res.json({
-        message: `OpenRouter error (${code}): ${msg}. If the key is correct, check Windows environment variables: remove a bad OPENROUTER_API_KEY from System/User env so backend/.env can take effect, then restart the server.`,
+        message: `OpenRouter error (${code}): ${msg}. Check that OPENROUTER_API_KEY in backend/.env was copied from the current OpenRouter account, has not been revoked, and that the backend was restarted after saving it.`,
       });
     }
 
