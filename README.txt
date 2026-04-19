@@ -33,6 +33,61 @@ Tripnexa
 
 ---
 
+# How to start the project
+
+You need **two terminals**: one for the **FastAPI** backend and one for the **React** frontend. Install dependencies once per machine.
+
+### 1. Backend (from repo root)
+
+```bash
+cd backend
+pip install fastapi uvicorn requests python-dotenv pydantic
+```
+
+Create **`backend/.env`** (this file is gitignored; do not commit it) with at least:
+
+```
+OPENROUTER_API_KEY=sk-or-v1-your_key_here
+```
+
+Create a key at `https://openrouter.ai/keys` . Optional: add `CORS_ORIGINS=https://your-production-site.com` for deployed frontends; local dev ports are merged automatically in `main.py`.
+
+Start the API (use **`python -m uvicorn`** on Windows if `uvicorn` is not on your PATH):
+
+```bash
+python -m uvicorn main:app --reload --host 127.0.0.1 --port 8000
+```
+
+- API: `http://127.0.0.1:8000`
+- Interactive docs: `http://127.0.0.1:8000/docs`
+
+### 2. Frontend (new terminal, from repo root)
+
+```bash
+cd ai-travel-agent
+npm install
+npm start
+```
+
+The dev server opens **Create React App** (often `http://localhost:3000` ; another port such as **3001** is used if 3000 is busy).
+
+The frontend **`package.json`** includes `"proxy": "http://127.0.0.1:8000"` so in **development** the app calls **`/generate`** on the same origin as the React server and the dev server forwards requests to FastAPI, which avoids browser CORS issues.
+
+### 3. Use the app
+
+With **both** processes running, open the URL printed in the terminal (for example `http://localhost:3000`), go to **Trip planner**, fill the form, and submit. A working **OpenRouter** key is required or generation will fail.
+
+### Production build (frontend only)
+
+```bash
+cd ai-travel-agent
+npm run build
+```
+
+Set **`REACT_APP_API_URL`** to your public API base URL before `npm run build` if the API is not served from the same host.
+
+---
+
 # Prerequisites
 
 Your system must have the following installed.

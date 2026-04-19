@@ -4,10 +4,8 @@ import { useEffect, useState } from "react";
 function MapView({ data }) {
   const [locations, setLocations] = useState([]);
 
-  
-
-  // 🔹 Convert place → lat/lng
   const geocodePlace = async (place) => {
+    if (!place) return null;
     try {
       const res = await fetch(
         `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
@@ -34,13 +32,15 @@ function MapView({ data }) {
     if (!data) return;
 
     const fetchLocations = async () => {
-      let places = [];
+      const places = [];
+      const seen = new Set();
 
-      for (let day of data.days || []) {
-        for (let day of data.days || []) {
-            const location = await geocodePlace(day.activities[0]);
-            if (location) places.push(location);
-        }
+      for (const day of data.days || []) {
+        const label = day.activities?.[0] || data.title;
+        if (!label || seen.has(label)) continue;
+        seen.add(label);
+        const location = await geocodePlace(label);
+        if (location) places.push(location);
       }
 
       setLocations(places);
@@ -49,7 +49,6 @@ function MapView({ data }) {
     fetchLocations();
   }, [data]);
 
-  // Default center (fallback)
   const center =
     locations.length > 0
       ? [locations[0].lat, locations[0].lng]
@@ -58,8 +57,9 @@ function MapView({ data }) {
   return (
     <MapContainer
       center={center}
-      zoom={12}
-      style={{ height: "400px", width: "100%", borderRadius: "12px" }}
+      zoom={locations.length > 1 ? 4 : 12}
+      className="z-0 h-[min(24rem,55vh)] w-full overflow-hidden rounded-2xl border border-slate-200/80 shadow-inner dark:border-slate-700/80"
+      style={{ minHeight: "280px" }}
     >
       <TileLayer
         attribution="&copy; OpenStreetMap"
@@ -67,7 +67,7 @@ function MapView({ data }) {
       />
 
       {locations.map((loc, i) => (
-        <Marker key={i} position={[loc.lat, loc.lng]}>
+        <Marker key={`${loc.name}-${i}`} position={[loc.lat, loc.lng]}>
           <Popup>{loc.name}</Popup>
         </Marker>
       ))}

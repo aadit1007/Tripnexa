@@ -2,11 +2,13 @@
   "name": "ai-travel-agent",
   "version": "0.1.0",
   "private": true,
+  "proxy": "http://127.0.0.1:8000",
   "dependencies": {
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^13.5.0",
+    "framer-motion": "^12.38.0",
     "jspdf": "^4.2.0",
     "leaflet": "^1.9.4",
     "react": "^19.2.4",
@@ -14,7 +16,7 @@
     "react-icons": "^5.5.0",
     "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.13.1",
-    "react-scripts": "5.0.1",
+    "react-scripts": "^5.0.1",
     "react-select": "^5.10.2",
     "web-vitals": "^2.1.4"
   },
@@ -43,8 +45,8 @@
     ]
   },
   "devDependencies": {
-    "autoprefixer": "^10.5.0",
-    "postcss": "^8.5.10",
-    "tailwindcss": "^4.2.2"
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17"
   }
 }

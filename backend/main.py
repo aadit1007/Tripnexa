@@ -1,25 +1,54 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 import requests
 import json
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
+# Load .env next to this file. override=True: values in .env beat stale/wrong Windows user env vars.
+_ENV_FILE = Path(__file__).resolve().parent / ".env"
+load_dotenv(_ENV_FILE, override=True)
 
 app = FastAPI()
 
-# ✅ CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# CORS: preflight must echo Access-Control-Allow-Origin for the browser Origin.
+# CORS_ORIGINS (optional) lists production sites — local CRA ports are always merged in so
+# .env can keep prod URLs without breaking http://localhost:3001 → 127.0.0.1:8000.
+_LOCAL_DEV_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://localhost:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+    "http://127.0.0.1:5173",
+]
+_cors_env = os.getenv("CORS_ORIGINS", "").strip()
+_explicit = [o.strip() for o in _cors_env.split(",") if o.strip()] if _cors_env else []
+if _explicit:
+    _merged = list(dict.fromkeys(_explicit + _LOCAL_DEV_ORIGINS))
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=_merged,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+else:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=False,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+def _openrouter_api_key() -> str:
+    """Re-read .env each call so edits apply without fighting OS-level env (dotenv override)."""
+    load_dotenv(_ENV_FILE, override=True)
+    return (os.getenv("OPENROUTER_API_KEY") or "").strip()
+
 
 class TripRequest(BaseModel):
     destination: str
@@ -27,8 +56,36 @@ class TripRequest(BaseModel):
     budget: str
 
 
+def _parse_trip_body(raw):
+    """Accept a JSON object or a JSON-encoded string (double-encoded clients)."""
+    if isinstance(raw, str):
+        try:
+            raw = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            raise HTTPException(
+                status_code=422,
+                detail="Body must be a JSON object, or a JSON string containing one.",
+            ) from exc
+    if not isinstance(raw, dict):
+        raise HTTPException(
+            status_code=422,
+            detail="Input should be a JSON object with destination, days, and budget.",
+        )
+    return raw
+
+
 @app.post("/generate")
-def generate_trip(data: TripRequest):
+async def generate_trip(request: Request):
+    try:
+        raw = await request.json()
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Invalid JSON body") from exc
+
+    raw = _parse_trip_body(raw)
+    try:
+        data = TripRequest.model_validate(raw)
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail=exc.errors()) from exc
 
     prompt = f"""
 
@@ -78,28 +135,47 @@ Rules:
 - 3–5 activities per day
 """
 
+    api_key = _openrouter_api_key()
+    if not api_key:
+        return {
+            "message": "Server misconfiguration: OPENROUTER_API_KEY is empty. Set it in backend/.env and restart uvicorn."
+        }
+
     try:
         response = requests.post(
             "https://openrouter.ai/api/v1/chat/completions",
             headers={
-                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                "Content-Type": "application/json"
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "http://localhost:3000",
+                "X-OpenRouter-Title": "Tripnexa",
             },
             json={
-                # ✅ Use working modern model
                 "model": "openai/gpt-4o-mini",
                 "messages": [
                     {"role": "user", "content": prompt}
-                ]
+                ],
             },
-            timeout=30
+            timeout=60,
         )
 
         data_json = response.json()
 
-        # Debug logs
         print("STATUS:", response.status_code)
-        print("RAW:", data_json)
+
+        if "choices" not in data_json and (
+            response.status_code == 401 or data_json.get("error")
+        ):
+            err = data_json.get("error") or {}
+            code = err.get("code", response.status_code)
+            msg = err.get("message", "unknown error")
+            return {
+                "message": (
+                    f"OpenRouter error ({code}): {msg}. "
+                    "If the key is correct, check Windows environment variables: remove a bad OPENROUTER_API_KEY "
+                    "from System/User env so backend/.env can take effect, then restart uvicorn."
+                )
+            }
 
         if "choices" not in data_json:
             return {"message": "API Error: " + str(data_json)}
