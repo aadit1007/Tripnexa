@@ -20,7 +20,7 @@ import {
   FaSpa,
 } from "react-icons/fa";
 
-const GEOAPIFY_KEY = "697a5489dbee42b1ab0cd2df6293407f";
+const GEOAPIFY_KEY = process.env.REACT_APP_GEOAPIFY_KEY || "";
 
 function buildSelectStyles(isDark) {
   return {
@@ -101,6 +101,11 @@ export default function TripPlanner() {
       setOptions([]);
       return;
     }
+    if (!GEOAPIFY_KEY) {
+      console.warn("REACT_APP_GEOAPIFY_KEY is missing; set it in ai-travel-agent/.env");
+      setOptions([]);
+      return;
+    }
     try {
       const res = await fetch(
         `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(
@@ -145,8 +150,40 @@ export default function TripPlanner() {
         }),
       });
 
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch {
+        const hint =
+          response.status === 502 || response.status === 504
+            ? " Is the backend running? From repo root: cd backend && npm run dev (port 8000)."
+            : "";
+        alert(`Could not read server response.${hint}`);
+        return;
+      }
+
+      if (data.detail) {
+        const detailMsg = Array.isArray(data.detail)
+          ? data.detail
+              .map((d) =>
+                typeof d === "string" ? d : d.msg || JSON.stringify(d)
+              )
+              .join(" ")
+          : typeof data.detail === "string"
+            ? data.detail
+            : "Invalid request.";
+        alert(detailMsg);
+        return;
+      }
+
       const tripData = data.message;
+
+      if (tripData == null) {
+        alert(
+          "Unexpected response from the API. Check that the backend is running and OPENROUTER_API_KEY is set."
+        );
+        return;
+      }
 
       if (typeof tripData === "string" || tripData?.detail) {
         alert(

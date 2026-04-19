@@ -1,5 +1,5 @@
 import { useLocation, Link } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import jsPDF from "jspdf";
 import Navbar from "../components/Navbar";
@@ -17,6 +17,8 @@ function readTripData(navState) {
   }
 }
 
+const PEXELS_API_KEY = process.env.REACT_APP_PEXELS_KEY || "";
+
 function TripResult() {
   const location = useLocation();
   const [data, setData] = useState(() => readTripData(location.state));
@@ -28,17 +30,18 @@ function TripResult() {
   const [heroImage, setHeroImage] = useState("");
   const [dayImages, setDayImages] = useState({});
 
-  const PEXELS_KEY =
-    "boulwxVmJQltzCvk1XtGBuBovT9E57t39ExRFcveYfrdeH9VyTPmWhP0";
-
-  const getImageUrl = async (query) => {
+  const getImageUrl = useCallback(async (query) => {
+    if (!PEXELS_API_KEY) {
+      console.warn("REACT_APP_PEXELS_KEY is missing; set it in ai-travel-agent/.env");
+      return "https://picsum.photos/800/400";
+    }
     try {
       const res = await fetch(
         `https://api.pexels.com/v1/search?query=${encodeURIComponent(
           query
         )}&per_page=1`,
         {
-          headers: { Authorization: PEXELS_KEY },
+          headers: { Authorization: PEXELS_API_KEY },
         }
       );
 
@@ -48,7 +51,7 @@ function TripResult() {
       console.error("Pexels error:", err);
       return "https://picsum.photos/800/400";
     }
-  };
+  }, []);
 
   const CACHE_KEY = "tripImagesCache";
 
@@ -89,7 +92,7 @@ function TripResult() {
     };
 
     loadImages();
-  }, [data]);
+  }, [data, getImageUrl]);
 
   if (!data) {
     return (

@@ -6,7 +6,7 @@ Tripnexa is an AI-powered travel planning web application that generates persona
 The system uses:
 
 * **React** for the frontend
-* **FastAPI** for the backend
+* **Node.js (Express)** for the backend API
 * **OpenRouter AI API** for itinerary generation
 
 ---
@@ -27,7 +27,8 @@ Tripnexa
 │   ├── package.json
 │
 ├── backend
-│   ├── main.py
+│   ├── server.js
+│   ├── package.json
 │   └── .env
 ```
 
@@ -35,13 +36,15 @@ Tripnexa
 
 # How to start the project
 
-You need **two terminals**: one for the **FastAPI** backend and one for the **React** frontend. Install dependencies once per machine.
+You need **two terminals**: one for the **Express** backend and one for the **React** frontend. Install dependencies once per machine.
 
 ### 1. Backend (from repo root)
 
+Requires **Node.js 18+** (uses built-in `fetch`).
+
 ```bash
 cd backend
-pip install fastapi uvicorn requests python-dotenv pydantic
+npm install
 ```
 
 Create **`backend/.env`** (this file is gitignored; do not commit it) with at least:
@@ -50,16 +53,22 @@ Create **`backend/.env`** (this file is gitignored; do not commit it) with at le
 OPENROUTER_API_KEY=sk-or-v1-your_key_here
 ```
 
-Create a key at `https://openrouter.ai/keys` . Optional: add `CORS_ORIGINS=https://your-production-site.com` for deployed frontends; local dev ports are merged automatically in `main.py`.
+Create a key at `https://openrouter.ai/keys` . Optional: add `CORS_ORIGINS=https://your-production-site.com` for deployed frontends; local dev ports are merged automatically in `server.js`.
 
-Start the API (use **`python -m uvicorn`** on Windows if `uvicorn` is not on your PATH):
+Start the API:
 
 ```bash
-python -m uvicorn main:app --reload --host 127.0.0.1 --port 8000
+npm run dev
 ```
 
-- API: `http://127.0.0.1:8000`
-- Interactive docs: `http://127.0.0.1:8000/docs`
+Or without auto-reload:
+
+```bash
+npm start
+```
+
+- API: `http://127.0.0.1:8000` (override with `PORT=...` in `.env` or the shell)
+- Health / info: `http://127.0.0.1:8000/` (JSON)
 
 ### 2. Frontend (new terminal, from repo root)
 
@@ -71,7 +80,7 @@ npm start
 
 The dev server opens **Create React App** (often `http://localhost:3000` ; another port such as **3001** is used if 3000 is busy).
 
-The frontend **`package.json`** includes `"proxy": "http://127.0.0.1:8000"` so in **development** the app calls **`/generate`** on the same origin as the React server and the dev server forwards requests to FastAPI, which avoids browser CORS issues.
+The frontend **`package.json`** includes `"proxy": "http://127.0.0.1:8000"` so in **development** the app calls **`/generate`** on the same origin as the React server and the dev server forwards requests to the Express API, which avoids browser CORS issues.
 
 ### 3. Use the app
 
@@ -109,23 +118,7 @@ npm -v
 
 ---
 
-### 2. Python 3.9+
-
-Download from:
-
-```
-https://python.org
-```
-
-Check installation:
-
-```bash
-python --version
-```
-
----
-
-### 3. Git (optional but recommended)
+### 2. Git (optional but recommended)
 
 Download:
 
@@ -157,10 +150,10 @@ Navigate to backend folder:
 cd backend
 ```
 
-Install Python dependencies:
+Install Node dependencies:
 
 ```bash
-pip install fastapi uvicorn requests python-dotenv
+npm install
 ```
 
 ---
@@ -192,7 +185,7 @@ https://openrouter.ai
 ## Run Backend Server
 
 ```bash
-uvicorn main:app --reload
+npm run dev
 ```
 
 Backend will start at:
@@ -201,10 +194,10 @@ Backend will start at:
 http://127.0.0.1:8000
 ```
 
-API documentation:
+API root (JSON):
 
 ```
-http://127.0.0.1:8000/docs
+http://127.0.0.1:8000/
 ```
 
 ---
@@ -265,7 +258,7 @@ http://localhost:3000
 The system will:
 
 ```
-Frontend → FastAPI → OpenRouter AI → Itinerary → Result Page
+Frontend → Express API → OpenRouter AI → Itinerary → Result Page
 ```
 
 5. A **formatted trip page** will appear with:
@@ -299,9 +292,8 @@ Frontend → FastAPI → OpenRouter AI → Itinerary → Result Page
 
 ### Backend
 
-* FastAPI
-* Python
-* Requests
+* Node.js
+* Express
 * OpenRouter AI API
 
 ---
@@ -313,7 +305,8 @@ Make sure **both servers are running**.
 Backend:
 
 ```bash
-uvicorn main:app --reload
+cd backend
+npm run dev
 ```
 
 Frontend:
@@ -347,8 +340,8 @@ Check `.env` file exists in backend folder.
 Run:
 
 ```bash
-npm install
-pip install fastapi uvicorn requests python-dotenv
+cd backend && npm install
+cd ../ai-travel-agent && npm install
 ```
 
 ---
