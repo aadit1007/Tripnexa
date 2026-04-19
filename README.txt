@@ -36,41 +36,35 @@ Tripnexa
 
 # How to start the project
 
-You need **two terminals**: one for the **Express** backend and one for the **React** frontend. Install dependencies once per machine.
+Use **two terminals**: one for the **Express backend** and one for the **React frontend**.
 
-### 1. Backend (from repo root)
+### 1) Backend setup and start
 
-Requires **Node.js 18+** (uses built-in `fetch`).
+From repo root:
 
 ```bash
 cd backend
 npm install
 ```
 
-Create **`backend/.env`** (this file is gitignored; do not commit it) with at least:
+Create `backend/.env`:
 
+```env
+OPENROUTER_API_KEY=your_openrouter_key
+CORS_ORIGINS=https://tripnexa.com,https://www.tripnexa.com,http://192.168.1.11:3000,http://192.168.1.11:3001,http://192.168.1.11:3002
 ```
-OPENROUTER_API_KEY=sk-or-v1-your_key_here
-```
 
-Create a key at `https://openrouter.ai/keys` . Optional: add `CORS_ORIGINS=https://your-production-site.com` for deployed frontends; local dev ports are merged automatically in `server.js`.
-
-Start the API:
+Start backend:
 
 ```bash
 npm run dev
 ```
 
-Or without auto-reload:
+Backend URL: `http://192.168.1.11:8000`
 
-```bash
-npm start
-```
+### 2) Frontend setup and start
 
-- API: `http://127.0.0.1:8000` (override with `PORT=...` in `.env` or the shell)
-- Health / info: `http://127.0.0.1:8000/` (JSON)
-
-### 2. Frontend (new terminal, from repo root)
+From repo root in a new terminal:
 
 ```bash
 cd ai-travel-agent
@@ -78,13 +72,19 @@ npm install
 npm start
 ```
 
-The dev server opens **Create React App** (often `http://localhost:3000` ; another port such as **3001** is used if 3000 is busy).
+Frontend URL:
 
-The frontend **`package.json`** includes `"proxy": "http://127.0.0.1:8000"` so in **development** the app calls **`/generate`** on the same origin as the React server and the dev server forwards requests to the Express API, which avoids browser CORS issues.
+- Local: `http://localhost:3002`
+- Network: `http://192.168.1.11:3002`
 
-### 3. Use the app
+Notes:
 
-With **both** processes running, open the URL printed in the terminal (for example `http://localhost:3000`), go to **Trip planner**, fill the form, and submit. A working **OpenRouter** key is required or generation will fail.
+- `ai-travel-agent/.env.development` sets `PORT=3002`
+- `ai-travel-agent/package.json` proxy points to `http://192.168.1.11:8000`
+
+### 3) Use the app
+
+Open `http://localhost:3002`, go to **Trip planner**, fill details, and click generate.
 
 ### Production build (frontend only)
 
