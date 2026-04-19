@@ -10,5 +10,5 @@ export function getApiBase() {
   const fromEnv = (process.env.REACT_APP_API_URL || "").trim().replace(/\/$/, "");
   if (fromEnv) return fromEnv;
   if (process.env.NODE_ENV === "development") return "";
-  return "http://127.0.0.1:8000";
+  return "http://10.223.150.223:8000";
 }
