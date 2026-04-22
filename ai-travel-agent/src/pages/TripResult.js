@@ -143,7 +143,7 @@ function TripResult() {
         <div className="relative mx-auto max-w-6xl overflow-hidden px-0 sm:px-6 sm:pt-4">
           <div className="relative aspect-[21/9] min-h-[200px] w-full sm:rounded-3xl sm:ring-1 sm:ring-slate-200/80 dark:sm:ring-slate-700/80">
             <img
-              src={heroImage || "https://via.placeholder.com/1600x500"}
+              src={heroImage || "https://picsum.photos/1600/500"}
               alt=""
               className="h-full w-full object-cover sm:rounded-3xl"
             />
@@ -231,7 +231,7 @@ function TripResult() {
                       <img
                         src={
                           dayImages[day.day] ||
-                          "https://via.placeholder.com/400x250"
+                          "https://picsum.photos/400/250"
                         }
                         alt=""
                         className="aspect-video w-full object-cover"
